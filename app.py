@@ -1,3 +1,5 @@
+import torch
+DEVICE = torch.device("mps")
 import gradio as gr
 
 import os
@@ -334,10 +336,13 @@ def pack_state(latents: Tuple[SparseTensor, SparseTensor, int]) -> dict:
     
 def unpack_state(state: dict) -> Tuple[SparseTensor, SparseTensor, int]:
     shape_slat = SparseTensor(
-        feats=torch.from_numpy(state['shape_slat_feats']).cuda(),
-        coords=torch.from_numpy(state['coords']).cuda(),
+        #feats=torch.from_numpy(state['shape_slat_feats']).cuda(),
+        feats=torch.from_numpy(state['shape_slat_feats']).to(DEVICE),
+        #coords=torch.from_numpy(state['coords']).cuda(),
+        coords=torch.from_numpy(state['coords']).to(DEVICE),
     )
-    tex_slat = shape_slat.replace(torch.from_numpy(state['tex_slat_feats']).cuda())
+    #tex_slat = shape_slat.replace(torch.from_numpy(state['tex_slat_feats']).cuda())
+    tex_slat = shape_slat.replace(torch.from_numpy(state['tex_slat_feats']).to(DEVICE))
     return shape_slat, tex_slat, state['res']
 
 
@@ -401,7 +406,7 @@ def image_to_3d(
     mesh.simplify(16777216) # nvdiffrast limit
     images = render_utils.render_snapshot(mesh, resolution=1024, r=2, fov=36, nviews=STEPS, envmap=envmap)
     state = pack_state(latents)
-    torch.cuda.empty_cache()
+    torch.mps.empty_cache()
     
     # --- HTML Construction ---
     # The Stack of 48 Images
@@ -510,7 +515,7 @@ def extract_glb(
     os.makedirs(user_dir, exist_ok=True)
     glb_path = os.path.join(user_dir, f'sample_{timestamp}.glb')
     glb.export(glb_path, extension_webp=True)
-    torch.cuda.empty_cache()
+    torch.mps.empty_cache()
     return glb_path, glb_path
 
 
@@ -625,20 +630,21 @@ if __name__ == "__main__":
         MODES[i]['icon_base64'] = image_to_base64(icon)
 
     pipeline = Trellis2ImageTo3DPipeline.from_pretrained('microsoft/TRELLIS.2-4B')
-    pipeline.cuda()
+    #pipeline.cuda()
+    pipeline.to(DEVICE)
     
     envmap = {
         'forest': EnvMap(torch.tensor(
             cv2.cvtColor(cv2.imread('assets/hdri/forest.exr', cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB),
-            dtype=torch.float32, device='cuda'
+            dtype=torch.float32, device=DEVICE
         )),
         'sunset': EnvMap(torch.tensor(
             cv2.cvtColor(cv2.imread('assets/hdri/sunset.exr', cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB),
-            dtype=torch.float32, device='cuda'
+            dtype=torch.float32, device=DEVICE
         )),
         'courtyard': EnvMap(torch.tensor(
             cv2.cvtColor(cv2.imread('assets/hdri/courtyard.exr', cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB),
-            dtype=torch.float32, device='cuda'
+            dtype=torch.float32, device=DEVICE
         )),
     }
     

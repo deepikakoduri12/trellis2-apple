@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-import utils3d
+import utils3d.torch
 from PIL import Image
 
 from ..renderers import MeshRenderer, VoxelRenderer, PbrMeshRenderer
@@ -21,15 +21,15 @@ def yaw_pitch_r_fov_to_extrinsics_intrinsics(yaws, pitchs, rs, fovs):
     extrinsics = []
     intrinsics = []
     for yaw, pitch, r, fov in zip(yaws, pitchs, rs, fovs):
-        fov = torch.deg2rad(torch.tensor(float(fov))).cuda()
-        yaw = torch.tensor(float(yaw)).cuda()
-        pitch = torch.tensor(float(pitch)).cuda()
+        fov = torch.deg2rad(torch.tensor(float(fov), device="mps"))
+        yaw = torch.tensor(float(yaw), device="mps")
+        pitch = torch.tensor(float(pitch), device="mps")
         orig = torch.tensor([
             torch.sin(yaw) * torch.cos(pitch),
             torch.cos(yaw) * torch.cos(pitch),
             torch.sin(pitch),
-        ]).cuda() * r
-        extr = utils3d.torch.extrinsics_look_at(orig, torch.tensor([0, 0, 0]).float().cuda(), torch.tensor([0, 0, 1]).float().cuda())
+        ], device="mps") * r
+        extr = utils3d.torch.extrinsics_look_at(orig, torch.tensor([0, 0, 0], device="mps").float(), torch.tensor([0, 0, 1], device="mps").float())
         intr = utils3d.torch.intrinsics_from_fov_xy(fov, fov)
         extrinsics.append(extr)
         intrinsics.append(intr)
