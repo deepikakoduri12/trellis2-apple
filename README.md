@@ -48,7 +48,7 @@ This workflow has been successfully tested on an Apple Silicon M5 Max with 64 GB
 Clone the repository with its submodules:
 
 ```bash
-git clone --recursive <YOUR_REPOSITORY_URL>
+git clone --recursive https://github.com/deepikakoduri12/trellis2-apple.git
 cd trellis2-apple
 ```
 
